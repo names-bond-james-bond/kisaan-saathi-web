@@ -43,7 +43,7 @@
         </div>
 
         <header class="text-center mb-8">
-            <h1 id="main-title" class="text-4xl font-bold text-gray-800">🌱 Farmer's Agri-Hub (Gujarat)</h1>
+            <h1 id="main-title" class="text-4xl font-bold text-gray-800">🌱 Kisaan Saathi (Gujarat)</h1>
             <p id="main-subtitle" class="text-gray-600 mt-2">Select your district to get personalized agricultural advice.</p>
         </header>
 
@@ -207,9 +207,9 @@
                     questionPlaceholder: "उदाहरण के लिए, मैं अपनी मिट्टी की नाइट्रोजन सामग्री को प्राकृतिक रूप से कैसे सुधार सकता हूँ?",
                     askBtn: "पूछें",
                     selectDistrictError: "कृपया एक जिला चुनें।",
-                    fetchError: "क्षमा करें, कृषि डेटा प्राप्त करते समय एक त्रुटि हुई। कृपया बाद में पुनः प्रयास करें।",
+                    fetchError: "क्षमा करें, कृषि डेटा प्राप्त करते समय एक त्रुटि हुई। कृपया बाद में पुनः પ્રયાસ करें।",
                     askError: "कृपया एक प्रश्न दर्ज करें और एक जिला चुनें।",
-                    geminiError: "क्षमा करें, मैं इस समय कोई प्रतिक्रिया नहीं दे पा रहा हूँ। कृपया बाद में पुनः प्रयास करें।",
+                    geminiError: "क्षમા करें, मैं इस समय कोई प्रतिक्रिया नहीं दे पा रहा हूँ। कृपया बाद में पुनः પ્રયાસ करें।",
                     expertAdvicePrefix: "विशेषज्ञ की सलाह:"
                 },
                 gu: {
@@ -319,7 +319,8 @@
                             responseMimeType: "application/json"
                         }
                     };
-                    const apiKey = "";
+                    // PASTE YOUR API KEY HERE
+                    const apiKey = "AIzaSyAIYgtNhqJ0MiWitSzjxJD-FanLkja0IBM";
                     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
                     
                     const maxRetries = 3;
@@ -397,110 +398,6 @@
                     let chatHistory = [];
                     chatHistory.push({ role: "user", parts: [{ text: prompt }] });
                     const payload = { contents: chatHistory };
-                    const apiKey = "";
-                    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
-                    
-                    // Simple retry logic with exponential backoff
-                    const maxRetries = 3;
-                    let retries = 0;
-                    let response;
-                    while (retries < maxRetries) {
-                        try {
-                            response = await fetch(apiUrl, {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify(payload)
-                            });
-                            if (response.status === 429) {
-                                // Too many requests, retry with backoff
-                                retries++;
-                                const delay = Math.pow(2, retries) * 1000;
-                                await new Promise(res => setTimeout(res, delay));
-                                continue;
-                            }
-                            if (!response.ok) {
-                                throw new Error(`API call failed with status: ${response.status}`);
-                            }
-                            break; // Success
-                        } catch (error) {
-                            if (retries === maxRetries - 1) throw error;
-                            retries++;
-                        }
-                    }
-
-                    const result = await response.json();
-
-                    if (result.candidates && result.candidates.length > 0 &&
-                        result.candidates[0].content && result.candidates[0].content.parts &&
-                        result.candidates[0].content.parts.length > 0) {
-                        const text = result.candidates[0].content.parts[0].text;
-                        geminiTextP.textContent = text;
-                    } else {
-                        throw new Error('No valid response from API.');
-                    }
-                } catch (error) {
-                    console.error("Error calling Gemini API:", error);
-                    geminiTextP.textContent = translations[currentLang].geminiError;
-                    showMessage(translations[currentLang].fetchError, 'bg-red-200 text-red-800');
-                } finally {
-                    geminiLoadingDiv.classList.add('hidden');
-                }
-            });
-
-            // Function to display the fetched data
-            function displayResults(data) {
-                // Clear previous content
-                plantInfoDiv.innerHTML = '';
-                nutrientInfoDiv.innerHTML = '';
-                alertInfoDiv.innerHTML = '';
-                
-                const t = translations[currentLang];
-
-                // Display plant recommendations
-                const plantsHtml = data.plants.map(plant => `<p class="flex items-center"><span class="text-green-500 mr-2">✓</span> ${plant}</p>`).join('');
-                plantInfoDiv.innerHTML = plantsHtml;
-                plantInfoDiv.innerHTML += `<p class="mt-2 text-gray-500 text-sm">${t.plantsHeading.replace('Recommended Plants', 'Best season')}: <span class="font-semibold">${data.season}</span></p>`;
-
-                // Display soil nutrient information
-                const nutrientsHtml = Object.entries(data.nutrients).map(([key, value]) => `
-                    <p class="capitalize"><strong>${key}:</strong> ${value}</p>
-                `).join('');
-                nutrientInfoDiv.innerHTML = nutrientsHtml;
-
-                // Display alerts
-                const alertsHtml = data.alerts.map(alert => `
-                    <p class="flex items-center text-red-600 font-medium">
-                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856a2 2 0 001.789-2.846L12.93 3.518a2 2 0 00-3.58 0L3.34 16.154a2 2 0 001.789 2.846z"></path>
-                        </svg>
-                        <span>${alert}</span>
-                    </p>
-                `).join('');
-                alertInfoDiv.innerHTML = alertsHtml;
-
-                // Show the results section
-                resultsDiv.classList.remove('hidden');
-            }
-
-            // Function to show a message in the message box
-            function showMessage(message, classes) {
-                messageBox.textContent = message;
-                messageBox.className = `p-4 mt-4 text-center rounded-lg ${classes}`;
-                if (message) {
-                    messageBox.classList.remove('hidden');
-                } else {
-                    messageBox.classList.add('hidden');
-                }
-            }
-
-            // Function to clear results
-            function clearResults() {
-                resultsDiv.classList.add('hidden');
-                plantInfoDiv.innerHTML = '';
-                nutrientInfoDiv.innerHTML = '';
-                alertInfoDiv.innerHTML = '';
-            }
-        });
-    </script>
-</body>
-</html>
+                    // PASTE YOUR API KEY HERE
+                    const apiKey = "AIzaSyAIYgtNhqJ0MiWitSzjxJD-FanLkja0IBM";
+                    const apiUrl 
